@@ -4,3 +4,4 @@ numpy
 python-dotenv
 pyforest
 dash
+dash_bootstrap_templates
