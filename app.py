@@ -5,6 +5,7 @@ from tqdm import tqdm
 import numpy as np
 import pandas as pd
 from dash import dcc, html
+import plotly.graph_objects as go
 import plotly.express as px
 
 data_list = json.load(open('./files/json/map/hn/refined_price_map_data_by_street.json', encoding='utf-8'))
@@ -45,6 +46,22 @@ fig2.update_layout(mapbox_style="open-street-map")
 fig2.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
 
 
+district_data = json.load(open('./files/json/map/hn/price_map_groupby_district_with_mean_refine.json', encoding='utf-8'))
+district_list = list(district_data.keys())
+alley_1_price = [district_data[district]["alleyHousePrice"]["1"]["mean"] for district in district_list]
+alley_2_price = [district_data[district]["alleyHousePrice"]["2"]["mean"] for district in district_list]
+alley_3_price = [district_data[district]["alleyHousePrice"]["3"]["mean"] for district in district_list]
+street_price = [district_data[district]["streetHousePrice"]["mean"] for district in district_list]
+
+fig3 = go.Figure(data=[
+    go.Bar(name='Street - House Pice', x=district_list, y=street_price),
+    go.Bar(name='Alley 1 - House Price', x=district_list, y=alley_1_price),
+    go.Bar(name='Alley 2 - House Price', x=district_list, y=alley_2_price),
+    go.Bar(name='Alley 3 - House Price', x=district_list, y=alley_3_price)
+])
+fig3.update_layout(barmode='group')
+
+
 
 app = Dash(__name__)
 
@@ -60,8 +77,11 @@ app.layout = html.Div([
             html.Div([html.H1('Ha Noi - MeeyMap Price Map')], style={'textAlign': 'center'}),
             dcc.Graph(figure=fig2)
         ], style={"flex": 1, "margin-left": 12})
-    ], style={"display":"flex", "justify-content": "space-between"})
-
+    ], style={"display":"flex", "justify-content": "space-between"}),
+    html.Div([
+        html.Div([html.H1('House Price By District')], style={'textAlign': 'center'}),
+        dcc.Graph(figure=fig3)
+    ])
 ])
 
 if __name__ == '__main__':
