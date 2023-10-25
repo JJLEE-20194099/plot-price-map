@@ -15,12 +15,15 @@ import plotly.express as px
 
 load_figure_template(["minty", "minty_dark"])
 
-data_list = json.load(open('./files/json/map/hn/refined_price_map_data_by_street.json', encoding='utf-8'))
+data = json.load(open('./files/json/map/hn/refined_price_map_data_by_street.json', encoding='utf-8'))
+data_list = []
+for _, val in data.items():
+    data_list = data_list + val
 
-lat_list = [data["input"]["LAT"] for data in data_list]
-lon_list = [data["input"]["LNG"] for data in data_list]
-street_price_list = [int(data["output"]["streetHousePrice"]["mean"]) for data in data_list]
-text_list = [f'Alley Price: {str([int(data["output"]["alleyHousePrice"]["1"]["mean"]), int(data["output"]["alleyHousePrice"]["2"]["mean"]), int(data["output"]["alleyHousePrice"]["3"]["mean"])])}' for data in data_list]
+lat_list = [data["lat"] for data in data_list]
+lon_list = [data["lon"] for data in data_list]
+street_price_list = [int(data["estimatePrice"]["output"]["streetHousePrice"]["mean"]) for data in data_list]
+text_list = [f'Alley Price: {str([int(data["estimatePrice"]["output"]["alleyHousePrice"]["1"]["mean"]), int(data["estimatePrice"]["output"]["alleyHousePrice"]["2"]["mean"]), int(data["estimatePrice"]["output"]["alleyHousePrice"]["3"]["mean"])])}' for data in data_list]
 location_df = pd.DataFrame()
 location_df['lat'] = lat_list
 location_df['lon'] = lon_list
@@ -54,13 +57,12 @@ fig2.update_layout(mapbox_style="open-street-map")
 fig2.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
 
 
-district_data = json.load(open('./files/json/map/hn/price_map_groupby_district_with_mean_refine.json', encoding='utf-8'))
-ward_data = json.load(open('./files/json/map/hn/price_map_groupby_ward_with_mean_refine.json', encoding='utf-8'))
+district_data = data.copy()
 district_list = list(district_data.keys())
-alley_1_price = [int(district_data[district]["alleyHousePrice"]["1"]["mean"]) for district in district_list]
-alley_2_price = [int(district_data[district]["alleyHousePrice"]["2"]["mean"]) for district in district_list]
-alley_3_price = [int(district_data[district]["alleyHousePrice"]["3"]["mean"]) for district in district_list]
-street_price = [int(district_data[district]["streetHousePrice"]["mean"]) for district in district_list]
+alley_1_price = [np.mean(np.array([int(item["estimatePrice"]["output"]["alleyHousePrice"]["1"]["mean"]) for item in district_data[district]])) for district in district_list]
+alley_2_price = [np.mean(np.array([int(item["estimatePrice"]["output"]["alleyHousePrice"]["2"]["mean"]) for item in district_data[district]])) for district in district_list]
+alley_3_price = [np.mean(np.array([int(item["estimatePrice"]["output"]["alleyHousePrice"]["3"]["mean"]) for item in district_data[district]])) for district in district_list]
+street_price = [np.mean(np.array([int(item["estimatePrice"]["output"]["streetHousePrice"]["mean"]) for item in district_data[district]])) for district in district_list]
 
 fig3 = go.Figure(data=[
     go.Bar(name='Street - House Pice', x=district_list, y=street_price),
@@ -86,6 +88,15 @@ color_mode_switch =  html.Span(
     ]
 )
 
+ward_data = dict()
+for district, streets in district_data.items():
+    ward_by_district = dict()
+    for street in streets:
+        if street["ward"] not in ward_by_district.keys():
+            ward_by_district[street["ward"]] = []
+
+        ward_by_district[street["ward"]].append(street)
+    ward_data[district] = ward_by_district
 
 @app.callback(
     Output('district-indicators', 'figure'),
@@ -96,10 +107,10 @@ def display_demographic_statistics(selected_district):
 
 
     ward_list = list(ward_data_by_district.keys())
-    alley_1_price = [ward_data_by_district[ward]["alleyHousePrice"]["1"]["mean"] for ward in ward_list]
-    alley_2_price = [ward_data_by_district[ward]["alleyHousePrice"]["2"]["mean"] for ward in ward_list]
-    alley_3_price = [ward_data_by_district[ward]["alleyHousePrice"]["3"]["mean"] for ward in ward_list]
-    street_price = [ward_data_by_district[ward]["streetHousePrice"]["mean"] for ward in ward_list]
+    alley_1_price = [np.mean(np.array([item["estimatePrice"]["output"]["alleyHousePrice"]["1"]["mean"] for item in ward_data_by_district[ward]])) for ward in ward_list]
+    alley_2_price = [np.mean(np.array([item["estimatePrice"]["output"]["alleyHousePrice"]["2"]["mean"] for item in ward_data_by_district[ward]])) for ward in ward_list]
+    alley_3_price = [np.mean(np.array([item["estimatePrice"]["output"]["alleyHousePrice"]["3"]["mean"] for item in ward_data_by_district[ward]])) for ward in ward_list]
+    street_price = [np.mean(np.array([item["estimatePrice"]["output"]["streetHousePrice"]["mean"] for item in ward_data_by_district[ward]])) for ward in ward_list]
 
     return {
             'data': [
@@ -140,13 +151,13 @@ clientside_callback(
 
 def display_demographic_distribution(selected_district):
 
-    street_by_district = [data for data in data_list if data["input"]["DISTRICT"] == selected_district]
+    street_by_district = district_data[selected_district]
     fig = make_subplots(rows=2, cols=2)
 
-    trace0 = go.Histogram(name='Alley 1 - House Price', x=[street["output"]["alleyHousePrice"]["1"]["mean"] for street in street_by_district])
-    trace1 = go.Histogram(name='Alley 2 - House Price',x=[street["output"]["alleyHousePrice"]["2"]["mean"] for street in street_by_district])
-    trace2 = go.Histogram(name='Alley 3 - House Price',x=[street["output"]["alleyHousePrice"]["3"]["mean"] for street in street_by_district])
-    trace3 = go.Histogram(name='Street - House Price',x=[street["output"]["streetHousePrice"]["mean"] for street in street_by_district])
+    trace0 = go.Histogram(name='Alley 1 - House Price', x=[street["estimatePrice"]["output"]["alleyHousePrice"]["1"]["mean"] for street in street_by_district])
+    trace1 = go.Histogram(name='Alley 2 - House Price',x=[street["estimatePrice"]["output"]["alleyHousePrice"]["2"]["mean"] for street in street_by_district])
+    trace2 = go.Histogram(name='Alley 3 - House Price',x=[street["estimatePrice"]["output"]["alleyHousePrice"]["3"]["mean"] for street in street_by_district])
+    trace3 = go.Histogram(name='Street - House Price',x=[street["estimatePrice"]["output"]["streetHousePrice"]["mean"] for street in street_by_district])
     fig.append_trace(trace0, 1, 1)
     fig.append_trace(trace1, 1, 2)
     fig.append_trace(trace2, 2, 1)
@@ -160,13 +171,13 @@ def display_demographic_distribution(selected_district):
 
 def display_demographic_distribution(selected_district):
 
-    street_by_district = [data for data in data_list if data["input"]["DISTRICT"] == selected_district]
+    street_by_district = district_data[selected_district]
     fig = make_subplots(rows=2, cols=2)
 
-    trace0 = go.Histogram(x=[street["output"]["alleyHousePrice"]["1"]["mean"] for street in street_by_district], nbinsx=30)
-    trace1 = go.Histogram(x=[street["output"]["alleyHousePrice"]["2"]["mean"] for street in street_by_district], nbinsx=30)
-    trace2 = go.Histogram(x=[street["output"]["alleyHousePrice"]["3"]["mean"] for street in street_by_district], nbinsx=30)
-    trace3 = go.Histogram(x=[street["output"]["streetHousePrice"]["mean"] for street in street_by_district], nbinsx=30)
+    trace0 = go.Histogram(name='Alley 1 - House Price', x=[street["estimatePrice"]["output"]["alleyHousePrice"]["1"]["mean"] for street in street_by_district])
+    trace1 = go.Histogram(name='Alley 2 - House Price',x=[street["estimatePrice"]["output"]["alleyHousePrice"]["2"]["mean"] for street in street_by_district])
+    trace2 = go.Histogram(name='Alley 3 - House Price',x=[street["estimatePrice"]["output"]["alleyHousePrice"]["3"]["mean"] for street in street_by_district])
+    trace3 = go.Histogram(name='Street - House Price',x=[street["estimatePrice"]["output"]["streetHousePrice"]["mean"] for street in street_by_district])
     fig.append_trace(trace0, 1, 1)
     fig.append_trace(trace1, 1, 2)
     fig.append_trace(trace2, 2, 1)
