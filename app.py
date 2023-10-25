@@ -49,11 +49,18 @@ fig2.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
 app = Dash(__name__)
 
 app.layout = html.Div([
-    html.Div([html.H1('Ha Noi - NestStock Price Map')], style={'textAlign': 'center'}),
-    dcc.Graph(figure=fig1),
-    html.Br(),
-    html.Div([html.H1('Ha Noi - MeeyMap Price Map')], style={'textAlign': 'center'}),
-    dcc.Graph(figure=fig2),
+    html.Div([html.H1('Price Dashboard')], style={'textAlign': 'center'}),
+    html.Div([
+        html.Div([
+            html.Div([html.H1('Ha Noi - NestStock Price Map')], style={'textAlign': 'center'}),
+            dcc.Graph(figure=fig1)
+        ], style={"flex": 1, "margin-right": 12}),
+
+        html.Div([
+            html.Div([html.H1('Ha Noi - MeeyMap Price Map')], style={'textAlign': 'center'}),
+            dcc.Graph(figure=fig2)
+        ], style={"flex": 1, "margin-left": 12})
+    ], style={"display":"flex", "justify-content": "space-between"})
 
 ])
 
