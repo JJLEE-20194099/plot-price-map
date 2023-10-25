@@ -1,12 +1,6 @@
-fastapi
-requests
-uvicorn
-python-multipart
 tqdm
-gensim
-regex
-asyncio
 pandas
 numpy
 python-dotenv
 pyforest
+dash
