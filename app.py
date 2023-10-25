@@ -13,8 +13,8 @@ data_list = json.load(open('./files/json/map/hn/refined_price_map_data_by_street
 
 lat_list = [data["input"]["LAT"] for data in data_list]
 lon_list = [data["input"]["LNG"] for data in data_list]
-street_price_list = [data["output"]["streetHousePrice"]["mean"] for data in data_list]
-text_list = [f'Alley Price: {str([data["output"]["alleyHousePrice"]["1"]["mean"], data["output"]["alleyHousePrice"]["2"]["mean"], data["output"]["alleyHousePrice"]["3"]["mean"]])}' for data in data_list]
+street_price_list = [int(data["output"]["streetHousePrice"]["mean"]) for data in data_list]
+text_list = [f'Alley Price: {str([int(data["output"]["alleyHousePrice"]["1"]["mean"]), int(data["output"]["alleyHousePrice"]["2"]["mean"]), int(data["output"]["alleyHousePrice"]["3"]["mean"])])}' for data in data_list]
 location_df = pd.DataFrame()
 location_df['lat'] = lat_list
 location_df['lon'] = lon_list
@@ -50,10 +50,10 @@ fig2.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
 district_data = json.load(open('./files/json/map/hn/price_map_groupby_district_with_mean_refine.json', encoding='utf-8'))
 ward_data = json.load(open('./files/json/map/hn/price_map_groupby_ward_with_mean_refine.json', encoding='utf-8'))
 district_list = list(district_data.keys())
-alley_1_price = [district_data[district]["alleyHousePrice"]["1"]["mean"] for district in district_list]
-alley_2_price = [district_data[district]["alleyHousePrice"]["2"]["mean"] for district in district_list]
-alley_3_price = [district_data[district]["alleyHousePrice"]["3"]["mean"] for district in district_list]
-street_price = [district_data[district]["streetHousePrice"]["mean"] for district in district_list]
+alley_1_price = [int(district_data[district]["alleyHousePrice"]["1"]["mean"]) for district in district_list]
+alley_2_price = [int(district_data[district]["alleyHousePrice"]["2"]["mean"]) for district in district_list]
+alley_3_price = [int(district_data[district]["alleyHousePrice"]["3"]["mean"]) for district in district_list]
+street_price = [int(district_data[district]["streetHousePrice"]["mean"]) for district in district_list]
 
 fig3 = go.Figure(data=[
     go.Bar(name='Street - House Pice', x=district_list, y=street_price),
