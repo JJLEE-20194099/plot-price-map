@@ -28,6 +28,7 @@ location_df['lat'] = location_df['lat'].astype(np.float32)
 meeyland_df = pd.read_csv('private_house_meey_land_location.csv')
 meeyland_df = meeyland_df.groupby(['lat', 'lon'])['street_price'].mean().reset_index()
 meeyland_df = meeyland_df.rename(columns={'street_price': 'price'})
+meeyland_df = meeyland_df[meeyland_df['price'] <= 950]
 
 
 color_scale = [(0, 'orange'), (1,'red')]
