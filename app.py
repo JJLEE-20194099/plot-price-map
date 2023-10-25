@@ -66,7 +66,9 @@ fig3.update_layout(barmode='group')
 
 fig4 = go.Figure()
 
-app = Dash(name=__name__, requests_pathname_prefix="/plot_price_map/" )
+app = Dash(name=__name__)
+# app = Dash(name=__name__, requests_pathname_prefix="/plot_price_map/")
+
 
 @app.callback(
     Output('district-indicators', 'figure'),
@@ -121,4 +123,4 @@ app.layout = html.Div([
 ])
 
 if __name__ == '__main__':
-    app.run(debug=True, host="127.0.0.1", port=9000)
+    app.run(debug=True, host="0.0.0.0", port=9000)
