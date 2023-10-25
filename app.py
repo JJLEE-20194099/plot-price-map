@@ -5,6 +5,7 @@ from tqdm import tqdm
 import numpy as np
 import pandas as pd
 from dash import dcc, html
+from dash.dependencies import Input, Output
 import plotly.graph_objects as go
 import plotly.express as px
 
@@ -47,6 +48,7 @@ fig2.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
 
 
 district_data = json.load(open('./files/json/map/hn/price_map_groupby_district_with_mean_refine.json', encoding='utf-8'))
+ward_data = json.load(open('./files/json/map/hn/price_map_groupby_ward_with_mean_refine.json', encoding='utf-8'))
 district_list = list(district_data.keys())
 alley_1_price = [district_data[district]["alleyHousePrice"]["1"]["mean"] for district in district_list]
 alley_2_price = [district_data[district]["alleyHousePrice"]["2"]["mean"] for district in district_list]
@@ -61,9 +63,32 @@ fig3 = go.Figure(data=[
 ])
 fig3.update_layout(barmode='group')
 
-
+fig4 = go.Figure()
 
 app = Dash(__name__)
+
+@app.callback(
+    Output('district-indicators', 'figure'),
+    [Input('district-dropdown', 'value')])
+
+def display_demographic_statistics(selected_district):
+    ward_data_by_district = ward_data[selected_district]
+
+
+    ward_list = list(ward_data_by_district.keys())
+    alley_1_price = [ward_data_by_district[ward]["alleyHousePrice"]["1"]["mean"] for ward in ward_list]
+    alley_2_price = [ward_data_by_district[ward]["alleyHousePrice"]["2"]["mean"] for ward in ward_list]
+    alley_3_price = [ward_data_by_district[ward]["alleyHousePrice"]["3"]["mean"] for ward in ward_list]
+    street_price = [ward_data_by_district[ward]["streetHousePrice"]["mean"] for ward in ward_list]
+
+    return {
+            'data': [
+                go.Bar(name='Street - House Pice', x=ward_list, y=street_price),
+                go.Bar(name='Alley 1 - House Price', x=ward_list, y=alley_1_price),
+                go.Bar(name='Alley 2 - House Price', x=ward_list, y=alley_2_price),
+                go.Bar(name='Alley 3 - House Price', x=ward_list, y=alley_3_price)
+            ]
+    }
 
 app.layout = html.Div([
     html.Div([html.H1('Price Dashboard')], style={'textAlign': 'center'}),
@@ -81,7 +106,17 @@ app.layout = html.Div([
     html.Div([
         html.Div([html.H1('House Price By District')], style={'textAlign': 'center'}),
         dcc.Graph(figure=fig3)
-    ])
+    ]),
+    html.Div([
+        html.Div([html.H1('House Price By Ward in A Specific District')], style={'textAlign': 'center'}),
+        dcc.Dropdown(id='district-dropdown',
+            options=[{'label': x, 'value': x}
+                    for x in district_list],
+                value=district_list[0],
+                multi=False, clearable=True),
+        dcc.Graph(id='district-indicators',  figure=fig4)
+    ]),
+
 ])
 
 if __name__ == '__main__':
